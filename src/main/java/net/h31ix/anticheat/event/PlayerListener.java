@@ -272,33 +272,20 @@ public class PlayerListener extends EventListener {
     
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
-        long total = System.nanoTime();
-        long time = System.nanoTime();
         final Player player = event.getPlayer();
         if(getCheckManager().checkInWorld(player) && !getCheckManager().isOpExempt(player)) {
-            System.out.println("event.getPlayer(): "+(System.nanoTime()-time)); time = System.nanoTime();
             final Location from = event.getFrom();
-            System.out.println("player.getFrom(): "+(System.nanoTime()-time)); time = System.nanoTime();
             final Location to = event.getTo();
-            System.out.println("player.getTo(): "+(System.nanoTime()-time)); time = System.nanoTime();
 
             final Distance distance = new Distance(from, to);
-            System.out.println("new Distance(from, to): "+(System.nanoTime()-time)); time = System.nanoTime();
             final double y = distance.getYDifference();
-            System.out.println("distance.getYDifference(): "+(System.nanoTime()-time)); time = System.nanoTime();
-
             getBackend().logAscension(player, from.getY(), to.getY());
-            System.out.println("logAscension(player, from.getY(), to.getY()): "+(System.nanoTime()-time)); time = System.nanoTime();
 
             final User user = getUserManager().getUser(player.getName());
-            System.out.println("getUserManager().getUser(player.getName()): "+(System.nanoTime()-time)); time = System.nanoTime();
             user.setTo(to.getX(), to.getY(), to.getZ());
-            System.out.println("user.setTo(to.getX(), to.getY(), to.getZ()): "+(System.nanoTime()-time)); time = System.nanoTime();
 
             if (getCheckManager().willCheckQuick(player, CheckType.SPEED)) {
-                System.out.println("getCheckManager().willCheck(player, CheckType.SPEED): "+(System.nanoTime()-time)); time = System.nanoTime();
                 CheckResult result = getBackend().checkFreeze(player, from.getY(), to.getY());
-                System.out.println("checkFreeze(): "+(System.nanoTime()-time)); time = System.nanoTime();
                 if(result.failed()) {
                     log(result.getMessage(), player, CheckType.SPEED);
                     if(!silentMode()) {
@@ -306,21 +293,15 @@ public class PlayerListener extends EventListener {
                     }
                 }
             }
-            time = System.nanoTime();
             if (getCheckManager().willCheckQuick(player, CheckType.SPRINT)) {
-                System.out.println("getCheckManager().willCheck(player, CheckType.SPRINT): "+(System.nanoTime()-time)); time = System.nanoTime();
                 CheckResult result = getBackend().checkSprintStill(player, from, to);
-                System.out.println("checkSprintStill(): "+(System.nanoTime()-time)); time = System.nanoTime();
                 if (result.failed()) {
                     event.setCancelled(!silentMode());
                     log(result.getMessage(), player, CheckType.SPRINT);
                 }
             }
-            time = System.nanoTime();
             if (getCheckManager().willCheckQuick(player, CheckType.FLY) && !player.isFlying() && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY)) {
-                System.out.println("getCheckManager().willCheck(player, CheckType.FLY): "+(System.nanoTime()-time)); time = System.nanoTime();
                 CheckResult result = getBackend().checkFlight(player, distance);
-                System.out.println("checkFlight(): "+(System.nanoTime()-time)); time = System.nanoTime();
                 if(result.failed()) {
                     if (!silentMode()) {
                         event.setTo(user.getGoodLocation(from.clone()));
@@ -328,12 +309,8 @@ public class PlayerListener extends EventListener {
                     log(result.getMessage(), player, CheckType.FLY);
                 }
             }
-            time = System.nanoTime();
             if (getCheckManager().willCheckQuick(player, CheckType.VCLIP) && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY) && getCheckManager().willCheck(player, CheckType.FLY) && event.getFrom().getY() > event.getTo().getY()) {
-                System.out.println("getCheckManager().willCheck(player, CheckType.VCLIP): "+(System.nanoTime()-time)); time = System.nanoTime();
                 CheckResult result = getBackend().checkVClip(player, new Distance(event.getFrom(), event.getTo()));
-                System.out.println("checkVClip(): "+(System.nanoTime()-time)); time = System.nanoTime();
-
                 if (result.failed()) {
                     if (!silentMode()) {
                         int data = result.getData() > 3 ? 3 : result.getData();
@@ -348,11 +325,8 @@ public class PlayerListener extends EventListener {
                     log(result.getMessage(), player, CheckType.VCLIP);
                 }
             }
-            time = System.nanoTime();
             if (getCheckManager().willCheckQuick(player, CheckType.NOFALL) && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY) && getCheckManager().willCheck(player, CheckType.FLY) && !Utilities.isClimbableBlock(player.getLocation().getBlock()) && event.getFrom().getY() > event.getTo().getY()) {
-                System.out.println("getCheckManager().willCheck(player, CheckType.NOFALL): "+(System.nanoTime()-time)); time = System.nanoTime();
                 CheckResult result = getBackend().checkNoFall(player, y);
-                System.out.println("checkNoFall(): "+(System.nanoTime()-time)); time = System.nanoTime();
                 if(result.failed()) {
                     if (!silentMode()) {
                         event.setTo(user.getGoodLocation(from.clone()));
@@ -363,15 +337,12 @@ public class PlayerListener extends EventListener {
             }
 
             boolean changed = false;
-            time = System.nanoTime();
             if (event.getTo() != event.getFrom()) {
                 double x = distance.getXDifference();
                 double z = distance.getZDifference();
                 if (getCheckManager().willCheckQuick(player, CheckType.SPEED) && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY) && getCheckManager().willCheck(player, CheckType.FLY)) {
-                    System.out.println("getCheckManager().willCheck(player, CheckType.SPEED): "+(System.nanoTime()-time)); time = System.nanoTime();
                     if (event.getFrom().getY() < event.getTo().getY()) {
                         CheckResult result = getBackend().checkYSpeed(player, y);
-                        System.out.println("checkYSpeed(): "+(System.nanoTime()-time)); time = System.nanoTime();
                         if(result.failed()) {
                             if (!silentMode()) {
                                 event.setTo(user.getGoodLocation(from.clone()));
@@ -380,9 +351,7 @@ public class PlayerListener extends EventListener {
                             changed = true;
                         }
                     }
-                    time = System.nanoTime();
                     CheckResult result = getBackend().checkXZSpeed(player, x, z);
-                    System.out.println("checkXZSpeed(): "+(System.nanoTime()-time)); time = System.nanoTime();
                     if (result.failed()) {
                         if (!silentMode()) {
                             event.setTo(user.getGoodLocation(from.clone()));
@@ -402,11 +371,8 @@ public class PlayerListener extends EventListener {
                     }
                     */
                 }
-                time = System.nanoTime();
                 if (getCheckManager().willCheckQuick(player, CheckType.WATER_WALK)) {
-                    System.out.println("getCheckManager().willCheck(player, CheckType.WATER_WALK): "+(System.nanoTime()-time)); time = System.nanoTime();
                     CheckResult result = getBackend().checkWaterWalk(player, x, y, z);
-                    System.out.println("checkWaterWalk(): "+(System.nanoTime()-time)); time = System.nanoTime();
                     if(result.failed()) {
                         if (!silentMode()) {
                             player.teleport(user.getGoodLocation(player.getLocation().add(0, -1, 0)));
@@ -415,11 +381,8 @@ public class PlayerListener extends EventListener {
                         changed = true;
                     }
                 }
-                time = System.nanoTime();
                 if (getCheckManager().willCheckQuick(player, CheckType.SNEAK)) {
-                    System.out.println("getCheckManager().willCheck(player, CheckType.SNEAK): "+(System.nanoTime()-time)); time = System.nanoTime();
                     CheckResult result = getBackend().checkSneak(player, x, z);
-                    System.out.println("checkSneak(): "+(System.nanoTime()-time)); time = System.nanoTime();
                     if(result.failed()) {
                         if (!silentMode()) {
                             event.setTo(user.getGoodLocation(from.clone()));
@@ -429,11 +392,8 @@ public class PlayerListener extends EventListener {
                         changed = true;
                     }
                 }
-                time = System.nanoTime();
                 if (getCheckManager().willCheckQuick(player, CheckType.SPIDER)) {
-                    System.out.println("getCheckManager().willCheck(player, CheckType.SPIDER): "+(System.nanoTime()-time)); time = System.nanoTime();
                     CheckResult result = getBackend().checkSpider(player, y);
-                    System.out.println("checkSpider(): "+(System.nanoTime()-time)); time = System.nanoTime();
                     if(result.failed()) {
                         if (!silentMode()) {
                             event.setTo(user.getGoodLocation(from.clone()));
@@ -442,18 +402,12 @@ public class PlayerListener extends EventListener {
                         changed = true;
                     }
                 }
-                time = System.nanoTime();
                 if (!changed) {
                     user.setGoodLocation(event.getFrom());
-                    System.out.println("changed: "+(System.nanoTime()-time)); time = System.nanoTime();
                 }
             }
         }
-        time = System.nanoTime();
         Anticheat.getManager().addEvent(event.getEventName(), event.getHandlers().getRegisteredListeners());
-        System.out.println("addEvent(): "+(System.nanoTime()-time));
-        System.out.println("TOTAL: "+(System.nanoTime()-total));
-        System.out.println("------------------------");
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
