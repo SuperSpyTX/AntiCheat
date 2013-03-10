@@ -272,155 +272,197 @@ public class PlayerListener extends EventListener {
     
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
-        final long time = System.currentTimeMillis();
-        Player player = event.getPlayer();
-        Location from = event.getFrom();
-        Location to = event.getTo();
+        long total = System.nanoTime();
+        long time = System.nanoTime();
+        final Player player = event.getPlayer();
+        if(getCheckManager().checkInWorld(player) && !getCheckManager().isOpExempt(player)) {
+            System.out.println("event.getPlayer(): "+(System.nanoTime()-time)); time = System.nanoTime();
+            final Location from = event.getFrom();
+            System.out.println("player.getFrom(): "+(System.nanoTime()-time)); time = System.nanoTime();
+            final Location to = event.getTo();
+            System.out.println("player.getTo(): "+(System.nanoTime()-time)); time = System.nanoTime();
 
-        Distance distance = new Distance(from, to);
-        double y = distance.getYDifference();
+            final Distance distance = new Distance(from, to);
+            System.out.println("new Distance(from, to): "+(System.nanoTime()-time)); time = System.nanoTime();
+            final double y = distance.getYDifference();
+            System.out.println("distance.getYDifference(): "+(System.nanoTime()-time)); time = System.nanoTime();
 
-        getBackend().logAscension(player, from.getY(), to.getY());
+            getBackend().logAscension(player, from.getY(), to.getY());
+            System.out.println("logAscension(player, from.getY(), to.getY()): "+(System.nanoTime()-time)); time = System.nanoTime();
 
-        User user = getUserManager().getUser(player.getName());
-        user.setTo(to.getX(), to.getY(), to.getZ());
+            final User user = getUserManager().getUser(player.getName());
+            System.out.println("getUserManager().getUser(player.getName()): "+(System.nanoTime()-time)); time = System.nanoTime();
+            user.setTo(to.getX(), to.getY(), to.getZ());
+            System.out.println("user.setTo(to.getX(), to.getY(), to.getZ()): "+(System.nanoTime()-time)); time = System.nanoTime();
 
-        if (getCheckManager().willCheck(player, CheckType.SPEED)) {
-            CheckResult result = getBackend().checkFreeze(player, from.getY(), to.getY());
-            if(result.failed()) {
-                log(result.getMessage(), player, CheckType.SPEED);
-                if(!silentMode()) {
-                    player.kickPlayer("Freezing client");
+            if (getCheckManager().willCheckQuick(player, CheckType.SPEED)) {
+                System.out.println("getCheckManager().willCheck(player, CheckType.SPEED): "+(System.nanoTime()-time)); time = System.nanoTime();
+                CheckResult result = getBackend().checkFreeze(player, from.getY(), to.getY());
+                System.out.println("checkFreeze(): "+(System.nanoTime()-time)); time = System.nanoTime();
+                if(result.failed()) {
+                    log(result.getMessage(), player, CheckType.SPEED);
+                    if(!silentMode()) {
+                        player.kickPlayer("Freezing client");
+                    }
                 }
             }
-        }
-        if (getCheckManager().willCheck(player, CheckType.SPRINT)) {
-            CheckResult result = getBackend().checkSprintStill(player, from, to);
-            if (result.failed()) {
-                event.setCancelled(!silentMode());
-                log(result.getMessage(), player, CheckType.SPRINT);
-            }
-        }
-        if (getCheckManager().willCheck(player, CheckType.FLY) && !player.isFlying() && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY)) {
-            CheckResult result = getBackend().checkFlight(player, distance);
-            if(result.failed()) {
-                if (!silentMode()) {
-                    event.setTo(user.getGoodLocation(from.clone()));
+            time = System.nanoTime();
+            if (getCheckManager().willCheckQuick(player, CheckType.SPRINT)) {
+                System.out.println("getCheckManager().willCheck(player, CheckType.SPRINT): "+(System.nanoTime()-time)); time = System.nanoTime();
+                CheckResult result = getBackend().checkSprintStill(player, from, to);
+                System.out.println("checkSprintStill(): "+(System.nanoTime()-time)); time = System.nanoTime();
+                if (result.failed()) {
+                    event.setCancelled(!silentMode());
+                    log(result.getMessage(), player, CheckType.SPRINT);
                 }
-                log(result.getMessage(), player, CheckType.FLY);                
             }
-        }
-        if (getCheckManager().willCheck(player, CheckType.VCLIP) && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY) && getCheckManager().willCheck(player, CheckType.FLY) && event.getFrom().getY() > event.getTo().getY()) {
-            CheckResult result = getBackend().checkVClip(player, new Distance(event.getFrom(), event.getTo()));
-            
-            if (result.failed()) {
-                if (!silentMode()) {
-                    int data = result.getData() > 3 ? 3 : result.getData();                    
-                    Location newloc = new Location(player.getWorld(), event.getFrom().getX(), event.getFrom().getY() + data, event.getFrom().getZ());
-                    if (newloc.getBlock().getTypeId() == 0) {
-                        event.setTo(newloc);
-                    } else {
+            time = System.nanoTime();
+            if (getCheckManager().willCheckQuick(player, CheckType.FLY) && !player.isFlying() && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY)) {
+                System.out.println("getCheckManager().willCheck(player, CheckType.FLY): "+(System.nanoTime()-time)); time = System.nanoTime();
+                CheckResult result = getBackend().checkFlight(player, distance);
+                System.out.println("checkFlight(): "+(System.nanoTime()-time)); time = System.nanoTime();
+                if(result.failed()) {
+                    if (!silentMode()) {
                         event.setTo(user.getGoodLocation(from.clone()));
                     }
-                    player.damage(3);
+                    log(result.getMessage(), player, CheckType.FLY);
                 }
-                log(result.getMessage(), player, CheckType.VCLIP);
             }
-        }
-        if (getCheckManager().willCheck(player, CheckType.NOFALL) && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY) && getCheckManager().willCheck(player, CheckType.FLY) && !Utilities.isClimbableBlock(player.getLocation().getBlock()) && event.getFrom().getY() > event.getTo().getY()) {
-            CheckResult result = getBackend().checkNoFall(player, y);
-            if(result.failed()) {
-                if (!silentMode()) {
-                    event.setTo(user.getGoodLocation(from.clone()));
-                    player.damage(1); // I added this in here so the player would still receive damage.
+            time = System.nanoTime();
+            if (getCheckManager().willCheckQuick(player, CheckType.VCLIP) && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY) && getCheckManager().willCheck(player, CheckType.FLY) && event.getFrom().getY() > event.getTo().getY()) {
+                System.out.println("getCheckManager().willCheck(player, CheckType.VCLIP): "+(System.nanoTime()-time)); time = System.nanoTime();
+                CheckResult result = getBackend().checkVClip(player, new Distance(event.getFrom(), event.getTo()));
+                System.out.println("checkVClip(): "+(System.nanoTime()-time)); time = System.nanoTime();
+
+                if (result.failed()) {
+                    if (!silentMode()) {
+                        int data = result.getData() > 3 ? 3 : result.getData();
+                        Location newloc = new Location(player.getWorld(), event.getFrom().getX(), event.getFrom().getY() + data, event.getFrom().getZ());
+                        if (newloc.getBlock().getTypeId() == 0) {
+                            event.setTo(newloc);
+                        } else {
+                            event.setTo(user.getGoodLocation(from.clone()));
+                        }
+                        player.damage(3);
+                    }
+                    log(result.getMessage(), player, CheckType.VCLIP);
                 }
-                log(result.getMessage(), player, CheckType.NOFALL);                
             }
-        }
+            time = System.nanoTime();
+            if (getCheckManager().willCheckQuick(player, CheckType.NOFALL) && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY) && getCheckManager().willCheck(player, CheckType.FLY) && !Utilities.isClimbableBlock(player.getLocation().getBlock()) && event.getFrom().getY() > event.getTo().getY()) {
+                System.out.println("getCheckManager().willCheck(player, CheckType.NOFALL): "+(System.nanoTime()-time)); time = System.nanoTime();
+                CheckResult result = getBackend().checkNoFall(player, y);
+                System.out.println("checkNoFall(): "+(System.nanoTime()-time)); time = System.nanoTime();
+                if(result.failed()) {
+                    if (!silentMode()) {
+                        event.setTo(user.getGoodLocation(from.clone()));
+                        player.damage(1); // I added this in here so the player would still receive damage.
+                    }
+                    log(result.getMessage(), player, CheckType.NOFALL);
+                }
+            }
 
-        boolean changed = false;
-
-        if (event.getTo() != event.getFrom()) {
-            double x = distance.getXDifference();
-            double z = distance.getZDifference();
-            if (getCheckManager().willCheck(player, CheckType.SPEED) && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY) && getCheckManager().willCheck(player, CheckType.FLY)) {
-                if (event.getFrom().getY() < event.getTo().getY()) {
-                    CheckResult result = getBackend().checkYSpeed(player, y);
-                    if(result.failed()) {
+            boolean changed = false;
+            time = System.nanoTime();
+            if (event.getTo() != event.getFrom()) {
+                double x = distance.getXDifference();
+                double z = distance.getZDifference();
+                if (getCheckManager().willCheckQuick(player, CheckType.SPEED) && getCheckManager().willCheck(player, CheckType.ZOMBE_FLY) && getCheckManager().willCheck(player, CheckType.FLY)) {
+                    System.out.println("getCheckManager().willCheck(player, CheckType.SPEED): "+(System.nanoTime()-time)); time = System.nanoTime();
+                    if (event.getFrom().getY() < event.getTo().getY()) {
+                        CheckResult result = getBackend().checkYSpeed(player, y);
+                        System.out.println("checkYSpeed(): "+(System.nanoTime()-time)); time = System.nanoTime();
+                        if(result.failed()) {
+                            if (!silentMode()) {
+                                event.setTo(user.getGoodLocation(from.clone()));
+                            }
+                            log(result.getMessage(), player, CheckType.SPEED);
+                            changed = true;
+                        }
+                    }
+                    time = System.nanoTime();
+                    CheckResult result = getBackend().checkXZSpeed(player, x, z);
+                    System.out.println("checkXZSpeed(): "+(System.nanoTime()-time)); time = System.nanoTime();
+                    if (result.failed()) {
                         if (!silentMode()) {
                             event.setTo(user.getGoodLocation(from.clone()));
                         }
                         log(result.getMessage(), player, CheckType.SPEED);
                         changed = true;
                     }
-                }
-                CheckResult result = getBackend().checkXZSpeed(player, x, z);
-                if (result.failed()) {
-                    if (!silentMode()) {
-                        event.setTo(user.getGoodLocation(from.clone()));
-                    }
-                    log(result.getMessage(), player, CheckType.SPEED);
-                    changed = true;
-                }
-                /*if ((event.getFrom().getX() != event.getTo().getX() || event.getFrom().getZ() != event.getTo().getZ())) {
-                    result = backend.checkTimer(player);
-                    if(result.failed()) {
-                        if (!config.silentMode()) {
-                            event.setTo(user.getGoodLocation(from.clone()));
+                    /*if ((event.getFrom().getX() != event.getTo().getX() || event.getFrom().getZ() != event.getTo().getZ())) {
+                        result = backend.checkTimer(player);
+                        if(result.failed()) {
+                            if (!config.silentMode()) {
+                                event.setTo(user.getGoodLocation(from.clone()));
+                            }
+                            log("tried to alter their timer.", player, CheckType.SPEED);
+                            changed = true;
                         }
-                        log("tried to alter their timer.", player, CheckType.SPEED);
+                    }
+                    */
+                }
+                time = System.nanoTime();
+                if (getCheckManager().willCheckQuick(player, CheckType.WATER_WALK)) {
+                    System.out.println("getCheckManager().willCheck(player, CheckType.WATER_WALK): "+(System.nanoTime()-time)); time = System.nanoTime();
+                    CheckResult result = getBackend().checkWaterWalk(player, x, y, z);
+                    System.out.println("checkWaterWalk(): "+(System.nanoTime()-time)); time = System.nanoTime();
+                    if(result.failed()) {
+                        if (!silentMode()) {
+                            player.teleport(user.getGoodLocation(player.getLocation().add(0, -1, 0)));
+                        }
+                        log(result.getMessage(), player, CheckType.WATER_WALK);
                         changed = true;
                     }
                 }
-                */
-            }
-            if (getCheckManager().willCheck(player, CheckType.WATER_WALK)) {
-                CheckResult result = getBackend().checkWaterWalk(player, x, y, z);
-                if(result.failed()) {
-                    if (!silentMode()) {
-                        player.teleport(user.getGoodLocation(player.getLocation().add(0, -1, 0)));
+                time = System.nanoTime();
+                if (getCheckManager().willCheckQuick(player, CheckType.SNEAK)) {
+                    System.out.println("getCheckManager().willCheck(player, CheckType.SNEAK): "+(System.nanoTime()-time)); time = System.nanoTime();
+                    CheckResult result = getBackend().checkSneak(player, x, z);
+                    System.out.println("checkSneak(): "+(System.nanoTime()-time)); time = System.nanoTime();
+                    if(result.failed()) {
+                        if (!silentMode()) {
+                            event.setTo(user.getGoodLocation(from.clone()));
+                            player.setSneaking(false);
+                        }
+                        log(result.getMessage(), player, CheckType.SNEAK);
+                        changed = true;
                     }
-                    log(result.getMessage(), player, CheckType.WATER_WALK);
-                    changed = true;
                 }
-            }
-            if (getCheckManager().willCheck(player, CheckType.SNEAK)) {
-                CheckResult result = getBackend().checkSneak(player, x, z);
-                if(result.failed()) {
-                    if (!silentMode()) {
-                        event.setTo(user.getGoodLocation(from.clone()));
-                        player.setSneaking(false);
+                time = System.nanoTime();
+                if (getCheckManager().willCheckQuick(player, CheckType.SPIDER)) {
+                    System.out.println("getCheckManager().willCheck(player, CheckType.SPIDER): "+(System.nanoTime()-time)); time = System.nanoTime();
+                    CheckResult result = getBackend().checkSpider(player, y);
+                    System.out.println("checkSpider(): "+(System.nanoTime()-time)); time = System.nanoTime();
+                    if(result.failed()) {
+                        if (!silentMode()) {
+                            event.setTo(user.getGoodLocation(from.clone()));
+                        }
+                        log(result.getMessage(), player, CheckType.SPIDER);
+                        changed = true;
                     }
-                    log(result.getMessage(), player, CheckType.SNEAK);
-                    changed = true;
                 }
-            }
-            if (getCheckManager().willCheck(player, CheckType.SPIDER)) {
-                CheckResult result = getBackend().checkSpider(player, y);
-                if(result.failed()) {
-                    if (!silentMode()) {
-                        event.setTo(user.getGoodLocation(from.clone()));
-                    }
-                    log(result.getMessage(), player, CheckType.SPIDER);
-                    changed = true;
+                time = System.nanoTime();
+                if (!changed) {
+                    user.setGoodLocation(event.getFrom());
+                    System.out.println("changed: "+(System.nanoTime()-time)); time = System.nanoTime();
                 }
-            }
-
-            if (!changed) {
-                user.setGoodLocation(event.getFrom());
             }
         }
-
+        time = System.nanoTime();
         Anticheat.getManager().addEvent(event.getEventName(), event.getHandlers().getRegisteredListeners());
+        System.out.println("addEvent(): "+(System.nanoTime()-time));
+        System.out.println("TOTAL: "+(System.nanoTime()-total));
+        System.out.println("------------------------");
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void checkFly(PlayerMoveEvent event) {
         // Check flight on highest to make sure other plugins have a chance to change the values first.
-        Player player = event.getPlayer();
-        User user = getUserManager().getUser(player.getName());
-        Location from = event.getFrom();
-        Location to = event.getTo();
+        final Player player = event.getPlayer();
+        final User user = getUserManager().getUser(player.getName());
+        final Location from = event.getFrom();
+        final Location to = event.getTo();
 
         if(!user.checkTo(to.getX(), to.getY(), to.getZ())) {
             // The to value has been modified by another plugin

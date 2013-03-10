@@ -21,12 +21,12 @@ package net.h31ix.anticheat.util;
 import org.bukkit.Location;
 
 public class Distance {
-    private double l1Y = 0;
-    private double l2Y = 0;
+    private final double l1Y;
+    private final double l2Y;
 
-    private double XDiff;
-    private double YDiff;
-    private double ZDiff;
+    private final double XDiff;
+    private final double YDiff;
+    private final double ZDiff;
     
     public Distance(Location from, Location to) {
         l1Y = to.getY();

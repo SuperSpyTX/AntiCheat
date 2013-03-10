@@ -544,9 +544,9 @@ public class Backend {
             // This was a teleport, so we don't care about it.
             return PASS;
         }
-        String name = player.getName();
-        double y1 = distance.fromY();
-        double y2 = distance.toY();
+        final String name = player.getName();
+        final double y1 = distance.fromY();
+        final double y2 = distance.toY();
         if (!isMovingExempt(player) && !Utilities.isHoveringOverWater(player.getLocation(), 1) && Utilities.cantStandAtExp(player.getLocation()) && Utilities.blockIsnt(player.getLocation().getBlock().getRelative(BlockFace.DOWN), new Material [] {Material.FENCE, Material.FENCE_GATE, Material.COBBLE_WALL})) {
             
             if (!blocksOverFlight.containsKey(name)) {

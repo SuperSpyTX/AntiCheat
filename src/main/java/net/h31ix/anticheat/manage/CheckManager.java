@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import net.h31ix.anticheat.util.Configuration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -32,6 +34,7 @@ import org.bukkit.entity.Player;
 
 public class CheckManager {
     private AnticheatManager manager = null;
+    private Configuration config;
     private static List<CheckType> checkIgnoreList = new ArrayList<CheckType>();
     private static Map<String, List<CheckType>> exemptList = new HashMap<String, List<CheckType>>();
     private static int disabled = 0;
@@ -39,8 +42,9 @@ public class CheckManager {
     
     public CheckManager(AnticheatManager instance) {
         manager = instance;
+        config = manager.getConfiguration();
     }
-    
+
     public void activateCheck(CheckType type) {
         if (isActive(type)) {
             manager.log("The " + type.toString() + " check was activated.");
@@ -85,15 +89,33 @@ public class CheckManager {
     public boolean isOpExempt(Player player) {
         return (this.manager.getConfiguration().opExempt() && player.isOp());
     }
-    
+
+    public boolean checkInWorld(Player player) {
+        return config.checkInWorld(player.getWorld());
+    }
+
+    public boolean willCheckQuick(Player player, CheckType type) {
+        return
+            isActive(type)
+            && !isExempt(player, type)
+            && !type.checkPermission(player);
+    }
+
     public boolean willCheck(Player player, CheckType type) {
-        return isActive(type) && manager.getConfiguration().checkInWorld(player.getWorld()) && !isExempt(player, type) && !type.checkPermission(player) && isOnline(player) && !isOpExempt(player);
+        return
+            isActive(type)
+            && config.checkInWorld(player.getWorld())
+            && !isExempt(player, type)
+            && !type.checkPermission(player)
+            && !isOpExempt(player);
     }
     
     public boolean isOnline(Player player) {
         // Check if the player is on the user list, e.g. is not an NPC
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p.getName().equals(player.getName())) { return true; }
+            if (p.getName().equals(player.getName())) {
+                return true;
+            }
         }
         return false;
     }
